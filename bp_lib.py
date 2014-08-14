@@ -239,7 +239,7 @@ def bpDecodeResponse(response):
     Decodes JSON response and returns
     associative array.
 
-    :param string:
+    :param response: string
     :return dict
     """
 
