@@ -44,26 +44,24 @@ def bpLog(contents):
     @return
     """
     if bp_options.bpOptions['logFile'] != "":
-        file = os.path.realpath(__file__) + bp_options.bpOptions['logFile']
+        file_name = os.path.realpath(__file__) + bp_options.bpOptions['logFile']
     else:
         # Fallback to using a default logfile name in case the variable is
         # missing or not set.
-        file = os.path.realpath(__file__) + '/bplog.txt'
+        file_name = os.path.realpath(__file__) + '/bplog.txt'
 
-    with open(file, "a") as log_file:
+    with open(file_name, "a") as log_file:
         log_file.write(time.strftime('%m-%d %H:%M:%S') + ": ")
         log_file.write(json.dumps(contents) + "\n")
 
 
 def bpCurl(url, apiKey, post=False):
-    global response
     """
     Handles post/get to BitPay via curl.
     
     @param string url, string apiKey, boolean post
     @return mixed response
     """
-    response = ""
     if url.strip() != '' and apiKey.strip() != '':
 
         cookie_handler = urllib2.HTTPCookieProcessor()
@@ -149,19 +147,6 @@ def bpCreateInvoice(orderId, price, posData, options):
     postOptions = ['orderID', 'itemDesc', 'itemCode', 'notificationEmail', 'notificationURL', 'redirectURL',
                    'posData', 'price', 'currency', 'physical', 'fullNotifications', 'transactionSpeed', 'buyerName',
                    'buyerAddress1', 'buyerAddress2', 'buyerCity', 'buyerState', 'buyerZip', 'buyerEmail', 'buyerPhone']
-
-    """                       
-    postOptions = ['orderID', 'itemDesc', 'itemCode', 'notificationEmail', 'notificationURL', 'redirectURL', 
-                         'posData', 'price', 'currency', 'physical', 'fullNotifications', 'transactionSpeed', 'buyerName', 
-                         'buyerAddress1', 'buyerAddress2', 'buyerCity', 'buyerState', 'buyerZip', 'buyerEmail', 'buyerPhone',
-                         'pluginName', 'pluginVersion', 'serverInfo', 'serverVersion', 'addPluginInfo'];
-    """
-    # Usage information for support purposes. Do not modify.
-    #postOptions['pluginName']    = 'Python Library';
-    #postOptions['pluginVersion'] = '1.0';
-    #postOptions['serverInfo']    = htmlentities(_SERVER['SERVER_SIGNATURE'], ENT_QUOTES);
-    #postOptions['serverVersion'] = htmlentities(_SERVER['SERVER_SOFTWARE'], ENT_QUOTES);
-    #postOptions['addPluginInfo'] = htmlentities(_SERVER['SCRIPT_FILENAME'], ENT_QUOTES);
 
     for o in postOptions:
         if o in options:
@@ -251,7 +236,7 @@ def bpDecodeResponse(response):
     @return array arrResponse
     """
 
-    if response == "" or response is None:
-        return 'Error: decodeResponse expects a string parameter.';
+    if not response:
+        return 'Error: decodeResponse expects a string parameter.'
 
     return json.loads(response)
