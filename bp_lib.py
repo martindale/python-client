@@ -95,7 +95,7 @@ def bpCurl(url, apiKey, post=False):
     return response
 
 
-def bpCreateInvoice(orderId, price, posData, options={}):
+def bpCreateInvoice(orderId, price, posData, options):
     """
         Creates BitPay invoice via bpCurl.
         
@@ -119,11 +119,14 @@ def bpCreateInvoice(orderId, price, posData, options={}):
     #
     # options keys can include any of:
     # 'itemDesc', 'itemCode', 'notificationEmail', 'notificationURL', 'redirectURL', 'apiKey'
-    #	'currency', 'physical', 'fullNotifications', 'transactionSpeed', 'buyerName',
-    #	'buyerAddress1', 'buyerAddress2', 'buyerCity', 'buyerState', 'buyerZip', 'buyerEmail', 'buyerPhone'
+    # 'currency', 'physical', 'fullNotifications', 'transactionSpeed', 'buyerName',
+    # 'buyerAddress1', 'buyerAddress2', 'buyerCity', 'buyerState', 'buyerZip', 'buyerEmail', 'buyerPhone'
     #
     # If a given option is not provided here, the value of that option will default to what is found in bp_options.php
     # (see api documentation for information on these options).
+
+    if not options:
+        options = dict()
 
     options = dict(bp_options.bpOptions.items() + options.items())  # options override any options found in bp_options.php
     pos = {
@@ -145,7 +148,7 @@ def bpCreateInvoice(orderId, price, posData, options={}):
 
     postOptions = ['orderID', 'itemDesc', 'itemCode', 'notificationEmail', 'notificationURL', 'redirectURL',
                    'posData', 'price', 'currency', 'physical', 'fullNotifications', 'transactionSpeed', 'buyerName',
-                   'buyerAddress1', 'buyerAddress2', 'buyerCity', 'buyerState', 'buyerZip', 'buyerEmail', 'buyerPhone'];
+                   'buyerAddress1', 'buyerAddress2', 'buyerCity', 'buyerState', 'buyerZip', 'buyerEmail', 'buyerPhone']
 
     """                       
     postOptions = ['orderID', 'itemDesc', 'itemCode', 'notificationEmail', 'notificationURL', 'redirectURL', 
