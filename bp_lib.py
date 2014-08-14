@@ -39,9 +39,8 @@ def bpLog(contents):
     """
     Writes contents to a log file specified in the bp_options file or, if missing,
     defaults to a standard filename of 'bplog.txt'.
-    
-    @param mixed contents
-    @return
+
+    :param contents: string
     """
     if bp_options.bpOptions['logFile'] != "":
         file_name = os.path.realpath(__file__) + bp_options.bpOptions['logFile']
@@ -58,9 +57,11 @@ def bpLog(contents):
 def bpCurl(url, apiKey, post=False):
     """
     Handles post/get to BitPay via curl.
-    
-    @param string url, string apiKey, boolean post
-    @return mixed response
+
+    :param url: string
+    :param apiKey: string
+    :param post: bool
+    :return response
     """
     if url.strip() != '' and apiKey.strip() != '':
 
@@ -90,15 +91,21 @@ def bpCurl(url, apiKey, post=False):
             if bp_options.bpOptions['useLogging']:
                 bpLog('Error: ' + responseString)
 
-    return response
+        return response
+    else:
+        return {
+            "error": "url or apiKey were blank."
+        }
 
 
 def bpCreateInvoice(orderId, price, posData, options):
     """
-        Creates BitPay invoice via bpCurl.
-        
-        @param string orderId, string price, string posData, array options
-        @return array response
+    Creates BitPay invoice via bpCurl.
+    :param orderId: string
+    :param price: string
+    :param posData: string
+    :param options: dict
+    :return response
     """
     # orderId: Used to display an orderID to the buyer. In the account summary view, this value is used to
     # identify a ledger entry if present. Maximum length is 100 characters.
@@ -165,18 +172,16 @@ def bpCreateInvoice(orderId, price, posData, options):
     return response
 
 
-def bpVerifyNotification(apiKey=False):
+def bpVerifyNotification(apiKey=False, post=None):
     """
     Call from your notification handler to convert _POST data to an object containing invoice data
-    
-    @param boolean apiKey
-    @return mixed json
+
+    :param apiKey: bool
+    :return dict
     """
 
     if not apiKey:
         apiKey = bp_options.bpOptions['apiKey']
-
-    post = {}  # how you get this post body data depends on what HTTP server you are using - SimpleHTTPServer, Flask, Bottle, Django, etc.
 
     if not post:
         return 'No post data'
@@ -199,9 +204,10 @@ def bpVerifyNotification(apiKey=False):
 def bpGetInvoice(invoiceId, apiKey=False):
     """
     Retrieves an invoice from BitPay.  options can include 'apiKey'
-    
-    @param string invoiceId, boolean apiKey
-    @return mixed json
+
+    :param invoiceId: string
+    :param apiKey: bool
+    :return dict
     """
 
     if not apiKey:
@@ -218,9 +224,10 @@ def bpGetInvoice(invoiceId, apiKey=False):
 def bpHash(data, key):
     """
     Generates a base64 encoded keyed hash.
-    
-    @param string data, string key
-    @return string hmac
+
+    :param data: string
+    :param key: string
+    :return string
     """
 
     hashed = hmac.new(key, data, sha256)
@@ -231,9 +238,9 @@ def bpDecodeResponse(response):
     """
     Decodes JSON response and returns
     associative array.
-    
-    @param string response
-    @return array arrResponse
+
+    :param string:
+    :return dict
     """
 
     if not response:
