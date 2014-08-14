@@ -30,6 +30,7 @@ import hmac
 import binascii
 import urllib2
 import urllib
+import collections
 
 import bp_options
 import os
@@ -139,7 +140,7 @@ def bpCreateInvoice(orderId, price, posData, options):
     }
 
     if bp_options.bpOptions['verifyPos']:
-        pos['hash'] = bpHash(str(posData), options['apiKey'])
+        pos['hash'] = bpHash(str(sanitize_dict(posData)), options['apiKey'])
 
     options['posData'] = json.dumps(pos)
 
@@ -193,12 +194,23 @@ def bpVerifyNotification(apiKey=False, post=None):
 
     posData = json.loads(jsondata['posData'])
 
-    if bp_options.bpOptions['verifyPos'] and posData['hash'] != bpHash(str(posData['posData']), apiKey):
+    if bp_options.bpOptions['verifyPos'] and posData['hash'] != bpHash(str(sanitize_dict(posData['posData'])), apiKey):
         return 'authentication failed (bad hash)'
 
     jsondata['posData'] = posData['posData']
 
     return jsondata
+
+
+def sanitize_dict(data):
+    if isinstance(data, basestring):
+        return str(data)
+    elif isinstance(data, collections.Mapping):
+        return dict(map(sanitize_dict, data.iteritems()))
+    elif isinstance(data, collections.Iterable):
+        return type(data)(map(sanitize_dict, data))
+    else:
+        return data
 
 
 def bpGetInvoice(invoiceId, apiKey=False):
