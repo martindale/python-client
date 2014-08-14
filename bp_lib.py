@@ -64,7 +64,7 @@ def bpCurl(url, apiKey, post=False):
     :param post: bool
     :return response
     """
-    if url.strip() != '' and apiKey.strip() != '':
+    if url.strip() and apiKey.strip():
 
         cookie_handler = urllib2.HTTPCookieProcessor()
         redirect_handler = urllib2.HTTPRedirectHandler()
