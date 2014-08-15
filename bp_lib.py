@@ -99,7 +99,7 @@ def bpCurl(url, apiKey, post=False):
         }
 
 
-def bpCreateInvoice(orderId, price, posData, options):
+def bpCreateInvoice(orderId, price, posData, options=None):
     """
     Creates BitPay invoice via bpCurl.
     :param orderId: string
