@@ -1,11 +1,13 @@
 import unittest
 import json
+import time
 
 import bp_lib as bp
 import bp_options as bp_opts
 
 
 MOCK_TEST_KEY = "test_y3w(lmx!@d3r1zh$$h0l2rq&5twdpv$m$7qlb6f4pzqmib4r*w"
+REAL_API_KEY = bp_opts.bpOptions['apiKey']
 
 # Set this to False to skip invoice creation tests. This requires your apiKey to be set in bp_options.
 # WARNING: Setting this to True will create an open invoice to your account.
@@ -114,4 +116,25 @@ class CurlTests(unittest.TestCase):
 @unittest.skipUnless(TEST_INVOICES, "Invoice testing is disabled.")
 class CreateInvoiceTests(unittest.TestCase):
     def setUp(self):
-        pass
+        self.apiKey = REAL_API_KEY
+        self.price = 0.005
+        self.price_type = bp_opts.bpOptions['currency']
+        self.invoice_response = bp.bpCreateInvoice("OrderId: " + str(time.time()), self.price, "test posData")
+
+    def test_valid_invoice_status(self):
+        self.assertTrue(self.invoice_response.get("status", False), "Expected invoice to be valid.")
+
+    def test_valid_invoice_data(self):
+        pos_data = bp.bpVerifyNotification(self.apiKey, json.dumps(self.invoice_response))  # Need to convert this back to a json string, which is what we will expect from POST data.
+        self.assertFalse(isinstance(pos_data, basestring), "Expected invoice verification to be valid.")
+
+    def test_valid_invoice_price(self):
+        self.assertEqual(float(self.invoice_response.get("btcPrice", False)), self.price, "Expected invoice to have the specified price.")
+        self.assertEqual(str(self.invoice_response.get("currency", False)), str(self.price_type), "Expected invoice to have the specified currency type.")
+
+    def test_valid_invoice_unpaid(self):
+        self.assertEqual(float(self.invoice_response.get("btcPaid", False)), float(0), "Expected invoice to have been unpaid.")
+
+    def test_valid_invoice_url(self):
+        self.assertTrue(self.invoice_response.get("url", False), "Expected invoice to have a proper url.")
+
