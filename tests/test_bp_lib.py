@@ -51,12 +51,12 @@ class HashTests(unittest.TestCase):
 class VerifyNotificationTests(unittest.TestCase):
     def setUp(self):
         self.apiKey = MOCK_TEST_KEY
-        posData = {'customer_id': 1000000}
+        pos_data = {'customer_id': 1000000}
 
         self.postData = json.dumps({
             "id": 1,
             "url": "http://example.com/example_invoice1",
-            "posData": json.dumps({"posData": posData, "hash": bp.bpHash(str(posData), self.apiKey)}),
+            "posData": json.dumps({"posData": pos_data, "hash": bp.bpHash(str(pos_data), self.apiKey)}),
             "status": "complete",
             "price": 5,
             "currency": "USD",
@@ -65,7 +65,7 @@ class VerifyNotificationTests(unittest.TestCase):
         self.invalidPostData = json.dumps({
             "id": 1,
             "url": "http://example.com/example_invoice1",
-            "posData": json.dumps({"posData": posData, "hash": bp.bpHash("invalid!", self.apiKey)}),
+            "posData": json.dumps({"posData": pos_data, "hash": bp.bpHash("invalid!", self.apiKey)}),
             "status": "complete",
             "price": 5,
             "currency": "USD",
@@ -88,6 +88,9 @@ class FakeBuildOpener():
 
 
 class FakeOpen():
+    def __init__(self):
+        pass
+
     def read(self, *args):
         return json.dumps({'status': 'new', 'invoiceTime': 1393950046292, 'currentTime': 1393950046520, 'url': 'https://bitpay.com/invoice?id=aASDF2jh4ashkASDfh234', 'price': 1, 'btcPrice': '1.0000', 'currency': 'BTC', 'posData': '{"posData": "fish", "hash": "ASDfkjha452345ASDFaaskjhasdlfkflkajsdf"}', 'expirationTime': 1393950946292, 'id': 'aASDF2jh4ashkASDfh234'})
 
