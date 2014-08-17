@@ -11,7 +11,7 @@ REAL_API_KEY = bp_opts.bpOptions['apiKey']
 
 # Set this to False to skip invoice creation tests. This requires your apiKey to be set in bp_options.
 # WARNING: Setting this to True will create an open invoice to your account.
-TEST_INVOICES = True and bp_opts.bpOptions['apiKey']
+TEST_INVOICES = False and bp_opts.bpOptions['apiKey']
 
 
 class DecodeResponseTests(unittest.TestCase):
