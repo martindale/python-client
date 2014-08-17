@@ -111,7 +111,7 @@ def bpCreateInvoice(order_id, price, pos_data, options=None):
     # orderId: Used to display an orderID to the buyer. In the account summary view, this value is used to
     # identify a ledger entry if present. Maximum length is 100 characters.
     #
-    # price: by default, price is expressed in the currency you set in bp_options.php.  The currency can be
+    # price: by default, price is expressed in the currency you set in bp_options.  The currency can be
     # changed in options.
     #
     # posData: this field is included in status updates or requests to get an invoice.  It is intended to be used by
@@ -128,13 +128,13 @@ def bpCreateInvoice(order_id, price, pos_data, options=None):
     # 'currency', 'physical', 'fullNotifications', 'transactionSpeed', 'buyerName',
     # 'buyerAddress1', 'buyerAddress2', 'buyerCity', 'buyerState', 'buyerZip', 'buyerEmail', 'buyerPhone'
     #
-    # If a given option is not provided here, the value of that option will default to what is found in bp_options.php
+    # If a given option is not provided here, the value of that option will default to what is found in bp_options
     # (see api documentation for information on these options).
 
     if not options:
         options = dict()
 
-    options = dict(bp_options.bpOptions.items() + options.items())  # options override any options found in bp_options.php
+    options = dict(bp_options.bpOptions.items() + options.items())  # options override any options found in bp_options
     pos = {
         "posData": pos_data
     }
