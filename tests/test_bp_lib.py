@@ -140,7 +140,7 @@ class CurlTests(unittest.TestCase):
         reload(bp)
 
 
-@unittest.skipUnless(TEST_INVOICES, "Invoice testing is disabled.")
+@unittest.skipUnless(TEST_INVOICES, "Invoice testing is disabled. Change TEST_INVOICES in test file to enable.")
 class CreateInvoiceTests(unittest.TestCase):
     def setUp(self):
         self.apiKey = REAL_API_KEY
