@@ -22,8 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import bp_options
-import os
 import time
 import json
 import base64
@@ -32,79 +30,88 @@ import hmac
 import binascii
 import urllib2
 import urllib
+import collections
 
-#print bp_options.bpOptions
+import bp_options
+import os
+
 
 def bpLog(contents):
     """
     Writes contents to a log file specified in the bp_options file or, if missing,
     defaults to a standard filename of 'bplog.txt'.
-    
-    @param mixed contents
-    @return
+
+    :param contents: string
     """
     if bp_options.bpOptions['logFile'] != "":
-        file = os.path.realpath(__file__) + bp_options.bpOptions['logFile']
+        file_name = os.path.realpath(__file__) + bp_options.bpOptions['logFile']
     else:
         # Fallback to using a default logfile name in case the variable is
         # missing or not set.
-        file = os.path.realpath(__file__) + '/bplog.txt'
-        
-    with open(file, "a") as log_file:
+        file_name = os.path.realpath(__file__) + '/bplog.txt'
+
+    with open(file_name, "a") as log_file:
         log_file.write(time.strftime('%m-%d %H:%M:%S') + ": ")
         log_file.write(json.dumps(contents) + "\n")
 
-def bpCurl(url, apiKey, post = False):
-    global response
+
+def bpCurl(url, api_key, post=False):
     """
     Handles post/get to BitPay via curl.
-    
-    @param string url, string apiKey, boolean post
-    @return mixed response
+
+    :param url: string
+    :param api_key: string
+    :param post: bool
+    :return response
     """
-    response = ""
-    if url.strip() != '' and apiKey.strip() != '':
-    
-        cookie_handler= urllib2.HTTPCookieProcessor()
-        redirect_handler= urllib2.HTTPRedirectHandler()
+    if url.strip() and api_key.strip():
+
+        cookie_handler = urllib2.HTTPCookieProcessor()
+        redirect_handler = urllib2.HTTPRedirectHandler()
         opener = urllib2.build_opener(redirect_handler, cookie_handler)
 
-        uname = base64.b64encode(apiKey)
+        uname = base64.b64encode(api_key)
 
         opener.addheaders = [
             ('Content-Type', 'application/json'),
             ('Authorization', 'Basic ' + uname),
             ('X-BitPay-Plugin-Info', 'pythonlib1.1'),
-        ] 
+        ]
 
         if post:
-            responseString = opener.open(url, urllib.urlencode(json.loads(post))).read()
+            response_string = opener.open(url, urllib.urlencode(json.loads(post))).read()
         else:
-            responseString = opener.open(url).read()
+            response_string = opener.open(url).read()
 
         try:
-            response = json.loads(responseString)
+            response = json.loads(response_string)
         except ValueError:
             response = {
-                "error": responseString
+                "error": response_string
             }
             if bp_options.bpOptions['useLogging']:
-                bpLog('Error: ' . responseString)
-                
-    return response
+                bpLog('Error: ' + response_string)
+
+        return response
+    else:
+        return {
+            "error": "url or apiKey were blank."
+        }
 
 
-def bpCreateInvoice(orderId, price, posData, options = {}):
+def bpCreateInvoice(order_id, price, pos_data, options=None):
     """
-        Creates BitPay invoice via bpCurl.
-        
-        @param string orderId, string price, string posData, array options
-        @return array response
+    Creates BitPay invoice via bpCurl.
+    :param order_id: string
+    :param price: string
+    :param pos_data: string
+    :param options: dict
+    :return response
     """
     # orderId: Used to display an orderID to the buyer. In the account summary view, this value is used to
     # identify a ledger entry if present. Maximum length is 100 characters.
     #
-    # price: by default, price is expressed in the currency you set in bp_options.php.  The currency can be
+    # price: by default, price is expressed in the currency you set in bp_options.  The currency can be
     # changed in options.
     #
     # posData: this field is included in status updates or requests to get an invoice.  It is intended to be used by
@@ -113,59 +120,49 @@ def bpCreateInvoice(orderId, price, posData, options = {}):
     # Maximum length is 100 characters.
     #
     # Note:  Using the posData hash option will APPEND the hash to the posData field and could push you over the 100
-    #        character limit.
+    # character limit.
     #
     #
     # options keys can include any of:
-    #	'itemDesc', 'itemCode', 'notificationEmail', 'notificationURL', 'redirectURL', 'apiKey'
-    #	'currency', 'physical', 'fullNotifications', 'transactionSpeed', 'buyerName',
-    #	'buyerAddress1', 'buyerAddress2', 'buyerCity', 'buyerState', 'buyerZip', 'buyerEmail', 'buyerPhone'
+    # 'itemDesc', 'itemCode', 'notificationEmail', 'notificationURL', 'redirectURL', 'apiKey'
+    # 'currency', 'physical', 'fullNotifications', 'transactionSpeed', 'buyerName',
+    # 'buyerAddress1', 'buyerAddress2', 'buyerCity', 'buyerState', 'buyerZip', 'buyerEmail', 'buyerPhone'
     #
-    # If a given option is not provided here, the value of that option will default to what is found in bp_options.php
+    # If a given option is not provided here, the value of that option will default to what is found in bp_options
     # (see api documentation for information on these options).
 
-    options = dict(bp_options.bpOptions.items() + options.items()) # options override any options found in bp_options.php
+    if not options:
+        options = dict()
+
+    options = dict(bp_options.bpOptions.items() + options.items())  # options override any options found in bp_options
     pos = {
-        "posData": posData
+        "posData": pos_data
     }
 
     if bp_options.bpOptions['verifyPos']:
-        pos['hash'] = bpHash(str(posData), options['apiKey']);
+        pos['hash'] = bpHash(str(sanitize_dict(pos_data)), options['apiKey'])
 
-    options['posData'] = json.dumps(pos);
+    options['posData'] = json.dumps(pos)
 
     if len(options['posData']) > 100:
         return {
             "error": "posData > 100 character limit. Are you using the posData hash?"
         }
 
-    options['orderID'] = orderId;
-    options['price'] = price;
+    options['orderID'] = order_id
+    options['price'] = price
 
-    postOptions = ['orderID', 'itemDesc', 'itemCode', 'notificationEmail', 'notificationURL', 'redirectURL', 
-                         'posData', 'price', 'currency', 'physical', 'fullNotifications', 'transactionSpeed', 'buyerName', 
-                         'buyerAddress1', 'buyerAddress2', 'buyerCity', 'buyerState', 'buyerZip', 'buyerEmail', 'buyerPhone'];
-           
-    """                       
-    postOptions = ['orderID', 'itemDesc', 'itemCode', 'notificationEmail', 'notificationURL', 'redirectURL', 
-                         'posData', 'price', 'currency', 'physical', 'fullNotifications', 'transactionSpeed', 'buyerName', 
-                         'buyerAddress1', 'buyerAddress2', 'buyerCity', 'buyerState', 'buyerZip', 'buyerEmail', 'buyerPhone',
-                         'pluginName', 'pluginVersion', 'serverInfo', 'serverVersion', 'addPluginInfo'];
-    """
-    # Usage information for support purposes. Do not modify.
-    #postOptions['pluginName']    = 'Python Library';
-    #postOptions['pluginVersion'] = '1.0';
-    #postOptions['serverInfo']    = htmlentities(_SERVER['SERVER_SIGNATURE'], ENT_QUOTES);
-    #postOptions['serverVersion'] = htmlentities(_SERVER['SERVER_SOFTWARE'], ENT_QUOTES);
-    #postOptions['addPluginInfo'] = htmlentities(_SERVER['SCRIPT_FILENAME'], ENT_QUOTES);
+    post_options = ['orderID', 'itemDesc', 'itemCode', 'notificationEmail', 'notificationURL', 'redirectURL',
+                    'posData', 'price', 'currency', 'physical', 'fullNotifications', 'transactionSpeed', 'buyerName',
+                    'buyerAddress1', 'buyerAddress2', 'buyerCity', 'buyerState', 'buyerZip', 'buyerEmail', 'buyerPhone']
 
-    for o in postOptions:
+    for o in post_options:
         if o in options:
             pos[o] = options[o]
 
-    pos = json.dumps(pos);
+    pos = json.dumps(pos)
 
-    response = bpCurl('https://bitpay.com/api/invoice/', options['apiKey'], pos);
+    response = bpCurl('https://bitpay.com/api/invoice/', options['apiKey'], pos)
 
     if bp_options.bpOptions['useLogging']:
         bpLog('Create Invoice: ')
@@ -175,75 +172,90 @@ def bpCreateInvoice(orderId, price, posData, options = {}):
 
     return response
 
-def bpVerifyNotification(apiKey = False):
+
+def bpVerifyNotification(api_key=False, post=None):
     """
     Call from your notification handler to convert _POST data to an object containing invoice data
-    
-    @param boolean apiKey
-    @return mixed json
+
+    :param api_key: bool
+    :return dict
     """
 
-    if not apiKey:
-        apiKey = bp_options.bpOptions['apiKey']	
-
-    post = {} #how you get this post body data depends on what HTTP server you are using - SimpleHTTPServer, Flask, Bottle, Django, etc.
+    if not api_key:
+        api_key = bp_options.bpOptions['apiKey']
 
     if not post:
         return 'No post data'
 
-    jsondata = json.loads(post)
+    json_data = json.loads(post)
 
-    if 'posData' not in jsondata:
-      return 'no posData'
+    if 'posData' not in json_data:
+        return 'no posData'
 
-    posData = json.loads(jsondata['posData'])
+    pos_data = json.loads(json_data['posData'])
 
-    if bp_options.bpOptions['verifyPos'] and posData['hash'] != bpHash(str(posData['posData']), apiKey):
+    if bp_options.bpOptions['verifyPos'] and pos_data['hash'] != bpHash(str(sanitize_dict(pos_data['posData'])), api_key):
         return 'authentication failed (bad hash)'
 
-    jsondata['posData'] = posData['posData']
+    json_data['posData'] = pos_data['posData']
 
-    return jsondata
+    return json_data
 
-def bpGetInvoice(invoiceId, apiKey=False):
+
+def sanitize_dict(data):
+    if isinstance(data, basestring):
+        return str(data)
+    elif isinstance(data, collections.Mapping):
+        return dict(map(sanitize_dict, data.iteritems()))
+    elif isinstance(data, collections.Iterable):
+        return type(data)(map(sanitize_dict, data))
+    else:
+        return data
+
+
+def bpGetInvoice(invoice_id, api_key=False):
     """
     Retrieves an invoice from BitPay.  options can include 'apiKey'
-    
-    @param string invoiceId, boolean apiKey
-    @return mixed json
+
+    :param invoice_id: string
+    :param api_key: bool
+    :return dict
     """
 
-    if not apiKey:
-      apiKey = bp_options.bpOptions['apiKey']
+    if not api_key:
+        api_key = bp_options.bpOptions['apiKey']
 
-    response = bpCurl('https://bitpay.com/api/invoice/'+invoiceId, apiKey)
+    response = bpCurl('https://bitpay.com/api/invoice/' + invoice_id, api_key)
 
     response['posData'] = json.loads(response['posData'])
     response['posData'] = response['posData']['posData']
 
     return response
 
+
 def bpHash(data, key):
     """
     Generates a base64 encoded keyed hash.
-    
-    @param string data, string key
-    @return string hmac
+
+    :param data: string
+    :param key: string
+    :return string
     """
-    
+
     hashed = hmac.new(key, data, sha256)
     return binascii.b2a_base64(hashed.digest())[:-1]
+
 
 def bpDecodeResponse(response):
     """
     Decodes JSON response and returns
     associative array.
-    
-    @param string response
-    @return array arrResponse
+
+    :param response: string
+    :return dict
     """
-  
-    if response == "" or response is None:
-      return 'Error: decodeResponse expects a string parameter.';
+
+    if not response:
+        return 'Error: decodeResponse expects a string parameter.'
 
     return json.loads(response)
